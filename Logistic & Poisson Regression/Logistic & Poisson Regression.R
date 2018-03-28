@@ -1,0 +1,69 @@
+#Logistic Regression Basics
+#Setting up data:
+#setwd("/home/sade/Desktop/")
+df <- data.frame(read.csv("Data_Logisticregression.csv"))
+
+#Logistic Regression (logit):
+df.fit1<-glm(GRADE~PSI+TUCE+GPA, family=binomial(link='logit'), data=df)
+summary(df.fit1)
+#*note coefficients are in log odds and need to be transformed (% change in odds or probability) to be interpreted*:
+
+#converting log-odds to probability:
+exp(coef(df.fit1))/(1+exp(coef(df.fit1)))*100
+
+#Test of significance:
+library(car)
+linearHypothesis(df.fit1, c("GPA = 0")) #Doing the test
+#Notice p-values correspond
+
+#Test of joint significance/ F-test/ Wald test
+library(car)
+lht(df.fit1, c("PSI = 0", "TUCE = 0", "GPA = 0"), white.adjust = FALSE)
+linearHypothesis(df.fit1, c("PSI = 0", "TUCE = 0", "GPA = 0"))
+
+#Deviance of Residuals:
+#Gives information about the residual distribution.
+
+#On the goodness of fit:
+#Residual deviance is a measure of the lack of fit of our model taken as a whole.  The Null deviance is a similar measure for a reduced model which only includes the intercept (notice the difference of 3 df aka 3 estimates removed).  These two vales can be used in an F-test.
+
+#AIC is another measure of goodness of fit that takes into account the ability of the model to fit the data (used to compare multiple models) LOWER IS BETTER.  AIC gives no information in an absolute sense and is useless without another model to compare with.
+
+#Fisher Scoring iterations tell us how many interations the software went through before the results were output.  Because most GLM's cannot be solved using closed form solutions, they must be approximated/ solved through iteration.
+
+#Logistic Regression (probit):
+df.fit2<-glm(GRADE~PSI+TUCE+GPA, family=binomial(link='probit'), data=df)
+summary(df.fit2)
+
+#Can't interpret coefficients directly (but can tell general sign impact).
+
+#estimates are in terms of Z-scores
+
+#to interpret model need to put in values in question and look at a normal distribution. e.g.:
+pnorm(coef(summary(df.fit2))[1,1]+coef(summary(df.fit2))[2,1]*1+coef(summary(df.fit2))[3,1]*20+coef(summary(df.fit2))[4,1]*3.3)
+#This represents the probability that someone who was exposed to the new teaching style with a TUCE score of 20 and a gpa of 3.3 will get an A in the course.
+
+#Compared with lpm (linear probability model):
+df.fit3<-lm(GRADE~PSI+TUCE+GPA, data=df)
+summary(df.fit3)
+
+#Poisson Regression Basics
+#Setting up data:
+setwd("/home/sade/Desktop/")
+df2 <- data.frame(warpbreaks)
+
+#Poisson Regression:
+df.fit4<-glm(breaks~wool*tension, family=poisson(link='log'), data=df2)
+summary(df.fit4)
+#Interpretation here is similar to the poisson case as this is a specific GLM.  Here we can make inference based on sign and say the more woolB units, the less expected breaks on the multiplicative order as exp(-.45663) = .6334
+
+#Rule for Interpretation of Parameter Estimates:
+
+#exp(α) = effect on the mean of Y, that is μ, when X = 0
+#exp(β) = with every unit increase in X, the predictor variable has multiplicative effect of exp(β) on the mean of Y, that is μ
+
+# If β = 0, then exp(β) = 1, and the expected count μ = E(y) = exp(α), and Y and X are not related.
+# If β > 0, then exp(β) > 1, and the expected count μ = E(y) is exp(β) times larger than when X = 0
+# If β < 0, then exp(β) < 1, and the expected count μ = E(y) is exp(β) times smaller than when X = 0
+
+#form is like this: log(E(y|x)) = b_o+b_1*x1 or E(y|x) = e^(b_o+b_1*x1)
